@@ -43,7 +43,7 @@ A skill that connects to Snowflake databases, analyzes the data for anomalies, a
   ├── SKILL.md
   └── investigations/
       └── <investigation-name>/
-          ├── app.py          (Streamlit dashboard)
+          ├── streamlit_app.py          (Streamlit dashboard)
           ├── data/           (cached query results, CSVs, etc.)
           └── ...
   ```
@@ -95,17 +95,78 @@ A skill that connects to Snowflake databases, analyzes the data for anomalies, a
 
 ### Step 9: Build the Streamlit Dashboard
 
-- Once the user confirms the PRD, build the Streamlit dashboard as `app.py` inside the investigation workspace.
+- Once the user confirms the PRD, build the Streamlit dashboard as `streamlit_app.py` inside the investigation workspace.
 - The dashboard should:
   - Be visually polished and modern.
   - Faithfully implement everything described in the confirmed `dashboard_PRD.md`.
   - Use clear titles, labels, and annotations so findings are easy to understand.
   - Include interactivity where appropriate (filters, date selectors, drill-downs).
-- Launch the dashboard locally using `streamlit run app.py`.
+- Launch the dashboard locally using `streamlit run streamlit_app.py`.
 - Use the Playwright MCP to:
   - Navigate to the running Streamlit app.
   - Take screenshots of every page/section of the dashboard.
   - Verify that all charts render correctly, data loads without errors, and interactive elements function as expected.
   - Check visual quality — ensure the layout is clean, text is readable, colors are consistent, and nothing looks broken or misaligned.
 - If any issues are found (rendering errors, broken charts, poor layout, slow load times), fix them and re-verify with Playwright until the dashboard meets a high quality bar.
-- Only present the dashboard to the user once it has been visually verified and confirmed working.
+- Only present the dashboard to the user once it has been visually verified and confirmed working. Ask the user if they want to deploy it to Snowflake (Streamlit-in-Snowflake).
+
+### Step 10: Deploy the Dashboard to Snowflake
+
+- After the dashboard is verified locally, ask the user if they want to deploy it to Snowflake (Streamlit-in-Snowflake).
+- **Ask the user which database and schema to deploy to.** If they already specified one earlier in the investigation, suggest that as the default.
+- **Ask which Snowflake role to use for deployment.** The role must have write access to the target schema and access to the compute pool.
+
+#### Create deployment files
+
+**`pyproject.toml`**: If one already exists from local development, edit it in place. Otherwise create one. Ensure:
+  - `requires-python = ">=3.11"` (Only 3.11 is support in container runtime).
+  - `snowflake-connector-python>=3.3.0` is listed as an explicit dependency (on Python 3.12+ the `streamlit[snowflake]` extra silently skips it).
+  - Example:
+    ```toml
+    [project]
+    name = "investigation-dashboard"
+    version = "0.1.0"
+    requires-python = ">=3.11"
+    dependencies = [
+        "snowflake-connector-python>=3.3.0",
+        "streamlit[snowflake]>=1.54.0",
+    ]
+    ```
+
+**`snowflake.yml`**: Create the deployment manifest in the investigation workspace. 
+  - Use these defaults:
+    - `runtime_name: SYSTEM$ST_CONTAINER_RUNTIME_PY3_11`
+    - `compute_pool: STREAMLIT_DEDICATED_POOL_L`
+    - `external_access_integrations: [PYPI_ACCESS_INTEGRATION]`
+  - Set `database`, `schema`, and `query_warehouse` based on user input.
+  - The `artifacts` list must include **every file the app needs**: `streamlit_app.py`, `pyproject.toml`, `snowflake.yml`, and any additional modules or data files.
+  - Example:
+    ```yaml
+    definition_version: 2
+    entities:
+      dashboard:
+        type: streamlit
+        identifier:
+          name: <APP_NAME>
+          database: <USER_DATABASE>
+          schema: <USER_SCHEMA>
+        query_warehouse: SNOWADHOC
+        runtime_name: SYSTEM$ST_CONTAINER_RUNTIME_PY3_11
+        compute_pool: STREAMLIT_DEDICATED_POOL_L
+        external_access_integrations:
+          - PYPI_ACCESS_INTEGRATION
+        main_file: streamlit_app.py
+        artifacts:
+          - streamlit_app.py
+          - pyproject.toml
+          - snowflake.yml
+    ```
+
+#### Requirements for deployment setup
+- Do **not** include `.streamlit/secrets.toml` in the artifacts list (it contains local credentials).
+- The main entry point **must** be named `streamlit_app.py`
+
+#### Run Deploy
+- Run `snow streamlit deploy --replace --connection default --role <ROLE>` from the investigation workspace.
+- Once deployed, share the Snowsight URL with the user.
+
