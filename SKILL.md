@@ -43,12 +43,17 @@ A skill that connects to Snowflake databases, analyzes the data for anomalies, a
   ├── SKILL.md
   └── investigations/
       └── <investigation-name>/
-          ├── streamlit_app.py          (Streamlit dashboard)
+          ├── streamlit_app.py (Streamlit dashboard)
           ├── data/           (cached query results, CSVs, etc.)
           └── ...
   ```
 - All investigation artifacts (scripts, data exports, dashboard files) go inside this workspace.
+- The workspace is a general-purpose working directory — the agent is free to create any additional files or subdirectories as needed beyond the ones explicitly named in this skill (e.g., helper scripts, intermediate CSVs, additional markdown notes, config files, etc.).
 - Each new investigation gets its own subfolder — never overwrite a previous one.
+- Once the workspace is created, initialize a `progress.md` file inside it to track investigation state.
+  - Keep it **concise** — just the current step, what's done, what's next, and any blockers. No lengthy summaries.
+  - Update it at the end of every step.
+  - Read it first at the start of every new conversation turn to resume where you left off.
 
 ### Step 5: Explore Data and Build a Semantic Understanding
 
@@ -95,6 +100,7 @@ A skill that connects to Snowflake databases, analyzes the data for anomalies, a
 
 ### Step 9: Build the Streamlit Dashboard
 
+- For all Streamlit-related development, always use the `developing-with-streamlit` skill as a reference for best practices, patterns, and guidelines.
 - Once the user confirms the PRD, build the Streamlit dashboard as `streamlit_app.py` inside the investigation workspace.
 - The dashboard should:
   - Be visually polished and modern.
@@ -119,7 +125,7 @@ A skill that connects to Snowflake databases, analyzes the data for anomalies, a
 #### Create deployment files
 
 **`pyproject.toml`**: If one already exists from local development, edit it in place. Otherwise create one. Ensure:
-  - `requires-python = ">=3.11"` (Only 3.11 is support in container runtime).
+  - `requires-python = ">=3.11"` (Only 3.11 is supported in container runtime).
   - `snowflake-connector-python>=3.3.0` is listed as an explicit dependency (on Python 3.12+ the `streamlit[snowflake]` extra silently skips it).
   - Example:
     ```toml
@@ -133,7 +139,7 @@ A skill that connects to Snowflake databases, analyzes the data for anomalies, a
     ]
     ```
 
-**`snowflake.yml`**: Create the deployment manifest in the investigation workspace. 
+**`snowflake.yml`**: Create the deployment manifest in the investigation workspace.
   - Use these defaults:
     - `runtime_name: SYSTEM$ST_CONTAINER_RUNTIME_PY3_11`
     - `compute_pool: STREAMLIT_DEDICATED_POOL_L`
@@ -164,9 +170,8 @@ A skill that connects to Snowflake databases, analyzes the data for anomalies, a
 
 #### Requirements for deployment setup
 - Do **not** include `.streamlit/secrets.toml` in the artifacts list (it contains local credentials).
-- The main entry point **must** be named `streamlit_app.py`
+- The main entry point **must** be named `streamlit_app.py`.
 
 #### Run Deploy
 - Run `snow streamlit deploy --replace --connection default --role <ROLE>` from the investigation workspace.
 - Once deployed, share the Snowsight URL with the user.
-
