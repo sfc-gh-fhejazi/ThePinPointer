@@ -1,11 +1,11 @@
 ---
 name: ThePinPointer
-description: A guided, multi-turn investigation skill that explores Snowflake databases, uncovers anomalies and data insights, and produces a polished Streamlit dashboard — all driven by the user's goals.
+description: Use when the user wants to investigate, analyze, or find anomalies in Snowflake data. Profiles databases, runs data investigations, and builds a Streamlit dashboard to visualize findings. Supports broad exploration or targeted analysis based on user goals.
 ---
 
 # ThePinPointer
 
-A skill that connects to Snowflake databases, analyzes the data for anomalies, and generates a Streamlit dashboard to visualize the findings.
+An interactive, multi-turn investigation skill. Give it a Snowflake database and an optional goal — it will explore the data, build a semantic understanding, uncover anomalies, and produce a polished Streamlit dashboard to visualize the findings. Every major step is confirmed with the user before proceeding.
 
 ## Prerequisites
 
