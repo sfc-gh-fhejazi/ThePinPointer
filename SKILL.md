@@ -120,6 +120,7 @@ An interactive, multi-turn investigation skill. Give it a Snowflake database and
 
 - After the dashboard is verified locally, ask the user if they want to deploy it to Snowflake (Streamlit-in-Snowflake).
 - **Ask the user which database and schema to deploy to.** If they already specified one earlier in the investigation, suggest that as the default.
+- **Important:** The deployment target database and schema are purely for *where the Streamlit app object lives* in Snowflake. They have nothing to do with the databases or schemas the app queries or analyzes — those remain unchanged regardless of where the app is deployed.
 - **Ask which Snowflake role to use for deployment.** The role must have write access to the target schema and access to the compute pool.
 
 #### Create deployment files
